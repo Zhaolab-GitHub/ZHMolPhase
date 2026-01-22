@@ -37,7 +37,22 @@ pip install torch==2.4.1
 ```
 
 ## Usage
-Example files are provided in the `example/` directory.
+
+Example input files are provided in the `example/` directory, including:
+- FASTA files containing protein sequences
+- PDB files containing protein structures
+- Precomputed protein language model embeddings (LLM)
+
+The LLM features are generated using **esm2_t33_650M_UR50D**
+(https://huggingface.co/facebook/esm2_t33_650M_UR50D).
+
+### Download trained model
+
+Download the pre-trained model weights from Zenodo:
+https://zenodo.org/uploads/18335181
+
+After downloading, extract the archive and place the model files in the same directory as specified by the `--ckpt_dir` argument.
+
 
 ### Predict Phase-Separating Proteins
 ```
