@@ -58,13 +58,13 @@ After downloading, extract the archive and place the model files in the same dir
 ```
 python predict.py --names_txt name.txt --fasta_dir example/sequence --pdb_dir example/pdb --llm_dir example/LLM --ckpt_dir ckpts --out example/output/score.txt
 ```
-### Predict key residues
+### Predict key regions
 
 #### Step 1: compute residue-level occlusion scores
 ```
 python residue_score.py --names_txt name.txt --fasta_dir example/sequence --pdb_dir example/pdb --llm_dir example/LLM --ckpt_dir ckpts --window 11 --out_dir example/output/score
 ```
-#### Step 2: extract predicted key residues
+#### Step 2: extract predicted key regions
 ```
 python get_key_region.py example/output/score/<protein_id>_occlusion.tsv example/output/score/<protein_id>.txt
 ```
