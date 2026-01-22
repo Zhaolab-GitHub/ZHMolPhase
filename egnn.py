@@ -1,0 +1,154 @@
+from torch import nn
+import torch
+
+def unsorted_segment_sum(data, segment_ids, num_segments):
+    result_shape = (num_segments, data.size(1))
+    result = data.new_full(result_shape, 0)
+    segment_ids = segment_ids.unsqueeze(-1).expand(-1, data.size(1))
+    result.scatter_add_(0, segment_ids, data)
+    return result
+
+def unsorted_segment_mean(data, segment_ids, num_segments):
+    result_shape = (num_segments, data.size(1))
+    segment_ids = segment_ids.unsqueeze(-1).expand(-1, data.size(1))
+    result = data.new_full(result_shape, 0)
+    count = data.new_full(result_shape, 0)
+    result.scatter_add_(0, segment_ids, data)
+    count.scatter_add_(0, segment_ids, torch.ones_like(data))
+    return result / count.clamp(min=1)
+
+class E_GCL(nn.Module):
+    def __init__(self, input_nf, output_nf, hidden_nf,
+                 edges_in_d=0, act_fn=nn.SiLU(), residual=True,
+                 attention=False, normalize=True, coords_agg='mean', tanh=True,
+                 edge_gating=True):
+        super().__init__()
+        self.residual = residual
+        self.attention = attention
+        self.normalize = normalize
+        self.coords_agg = coords_agg
+        self.tanh = tanh
+        self.edge_gating = edge_gating
+        self.epsilon = 1e-8
+        edge_coords_nf = 1  # radial
+
+        in_edge_total = input_nf * 2 + edge_coords_nf + edges_in_d
+        self.edge_mlp = nn.Sequential(
+            nn.Linear(in_edge_total, hidden_nf),
+            act_fn,
+            nn.Linear(hidden_nf, hidden_nf),
+            act_fn,
+        )
+        self.node_mlp = nn.Sequential(
+            nn.Linear(hidden_nf + input_nf, hidden_nf),
+            act_fn,
+            nn.Linear(hidden_nf, output_nf),
+        )
+        coord_head = nn.Linear(hidden_nf, 1, bias=False)
+        torch.nn.init.xavier_uniform_(coord_head.weight, gain=0.001)
+        coord_mlp = [nn.Linear(hidden_nf, hidden_nf), act_fn, coord_head]
+        if self.tanh:
+            coord_mlp.append(nn.Tanh())
+        self.coord_mlp = nn.Sequential(*coord_mlp)
+
+        if self.attention:
+            self.att_mlp = nn.Sequential(nn.Linear(hidden_nf, 1), nn.Sigmoid())
+        if self.edge_gating:
+            self.gate = nn.Sequential(nn.Linear(hidden_nf, 1), nn.Sigmoid())
+
+    def coord2radial(self, edge_index, coord):
+        row, col = edge_index
+        coord_diff = coord[row] - coord[col]
+        radial = torch.sum(coord_diff ** 2, 1).unsqueeze(1)
+        if self.normalize:
+            norm = torch.sqrt(radial).detach() + self.epsilon
+            coord_diff = coord_diff / norm
+        return radial, coord_diff
+
+    def edge_model(self, source, target, radial, edge_attr):
+        if edge_attr is None:
+            h = torch.cat([source, target, radial], dim=1)
+        else:
+            h = torch.cat([source, target, radial, edge_attr], dim=1)
+        h = self.edge_mlp(h)
+        if self.attention:
+            att = self.att_mlp(h)
+            h = h * att
+        return h
+
+    def node_model(self, x, edge_index, edge_feat, node_attr):
+        row, col = edge_index
+        msg = edge_feat
+        if self.edge_gating:
+            g = self.gate(edge_feat)  # (E,1)
+            msg = msg * g
+        # Aggregate to TARGET node (col)
+        agg = unsorted_segment_sum(msg, col, num_segments=x.size(0))
+        if node_attr is not None:
+            agg = torch.cat([x, agg, node_attr], dim=1)
+        else:
+            agg = torch.cat([x, agg], dim=1)
+        out = self.node_mlp(agg)
+        if self.residual:
+            out = x + out
+        return out
+
+    def coord_model(self, coord, edge_index, coord_diff, edge_feat):
+        row, col = edge_index
+        trans = coord_diff * self.coord_mlp(edge_feat)
+        if self.coords_agg == 'sum':
+            agg = unsorted_segment_sum(trans, col, num_segments=coord.size(0))
+        elif self.coords_agg == 'mean':
+            agg = unsorted_segment_mean(trans, col, num_segments=coord.size(0))
+        else:
+            raise ValueError("coords_agg must be 'sum' or 'mean'")
+        coord = coord + agg
+        return coord
+
+    def forward(self, h, edge_index, coord, edge_attr=None, node_attr=None):
+        row, col = edge_index
+        radial, coord_diff = self.coord2radial(edge_index, coord)
+        edge_feat = self.edge_model(h[row], h[col], radial, edge_attr)
+        coord = self.coord_model(coord, edge_index, coord_diff, edge_feat)
+        h = self.node_model(h, edge_index, edge_feat, node_attr)
+        return h, coord, edge_attr
+
+class EGNN(nn.Module):
+    def __init__(self, in_node_nf, hidden_nf, out_node_nf, in_edge_nf=0, act_fn=nn.SiLU(),
+                 n_layers=5, residual=True, attention=False, normalize=True, tanh=True,
+                 edge_gating=True, dropout=0.0):
+        super().__init__()
+        self.n_layers = n_layers
+        self.embedding_in = nn.Linear(in_node_nf, hidden_nf)
+        self.embedding_out = nn.Linear(hidden_nf, out_node_nf)
+        self.dr = nn.Dropout(dropout)
+
+        for i in range(n_layers):
+            self.add_module(
+                f"gcl_{i}",
+                E_GCL(
+                    hidden_nf, hidden_nf, hidden_nf,
+                    edges_in_d=in_edge_nf, act_fn=act_fn,
+                    residual=residual, attention=attention,
+                    normalize=normalize, tanh=tanh, edge_gating=edge_gating,
+                ),
+            )
+
+        # optional: allow skipping coord updates in future
+        self.update_coords = True
+
+    def forward(self, h, x, edges, edge_attr):
+        h = self.embedding_in(h)
+        h = self.dr(h)
+        for i in range(self.n_layers):
+            if self.update_coords:
+                h, x, _ = self._modules[f"gcl_{i}"](h, edges, x, edge_attr=edge_attr)
+            else:
+                row, col = edges
+                radial = torch.sum((x[row] - x[col]) ** 2, 1).unsqueeze(1)
+                edge_feat = self._modules[f"gcl_{i}"].edge_model(h[row], h[col], radial, edge_attr)
+                h = self._modules[f"gcl_{i}"].node_model(h, edges, edge_feat, None)
+            h = self.dr(h)
+        h = self.embedding_out(h)
+        return h, x
+
