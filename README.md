@@ -87,9 +87,9 @@ Example input files are provided in the `example/` directory, including:
 
 - FASTA files containing protein sequences
 - PDB files containing protein structures
-- Precomputed protein language model embeddings (LLM)
+- Precomputed protein language model embeddings (pLM)
 
-The LLM features are generated using **esm2_t33_650M_UR50D**
+The pLM features are generated using **esm2_t33_650M_UR50D**
 (https://huggingface.co/facebook/esm2_t33_650M_UR50D).
 
 ### Download trained model
