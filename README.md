@@ -251,7 +251,7 @@ For ZHMolPhase and most compared methods, a default threshold of 0.5 is used unl
 
 ## Reproducibility details
 
-Detailed implementation settings, model hyperparameters, preprocessing choices, threshold definitions, and random-seed information are provided in `docs/reproducibility.md`
+Detailed implementation settings, model hyperparameters, preprocessing choices, threshold definitions, and random-seed information are provided in `docs/reproducibility.md`.
 
 ## Datasets
 
