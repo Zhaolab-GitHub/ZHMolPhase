@@ -249,6 +249,10 @@ For ZHMolPhase and most compared methods, a default threshold of 0.5 is used unl
 - 0.7: a more stringent threshold, which emphasizes higher-confidence positive predictions.
 - 0.9: a highly stringent threshold, used to examine performance when only very high-scoring proteins are classified as positives.
 
+## Reproducibility details
+
+Detailed implementation settings, model hyperparameters, preprocessing choices, threshold definitions, and random-seed information are provided in `docs/reproducibility.md`
+
 ## Datasets
 
 Training and test datasets are provided in the `dataset/` directory.
