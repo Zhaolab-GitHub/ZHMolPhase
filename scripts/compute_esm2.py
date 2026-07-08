@@ -85,6 +85,20 @@ def import_esm_package():
         ) from e
 
 
+def torch_load_trusted_checkpoint(path: str):
+    """
+    Load a trusted ESM checkpoint across PyTorch versions.
+
+    PyTorch >= 2.6 changed torch.load(..., weights_only=True) to the default.
+    Official fair-esm checkpoints contain an argparse.Namespace object, so they
+    need weights_only=False when loaded from a trusted local source.
+    """
+    try:
+        return torch.load(path, map_location="cpu", weights_only=False)
+    except TypeError:
+        return torch.load(path, map_location="cpu")
+
+
 def load_esm2_model(model_path: str, device: torch.device):
     """
     Load ESM-2 from a user-provided local .pt checkpoint.
@@ -117,12 +131,12 @@ def load_esm2_model(model_path: str, device: torch.device):
     # Prefer explicit local loading through fair-esm internals so that a missing
     # contact-regression file does not prevent embedding extraction.
     try:
-        model_data = torch.load(model_path, map_location="cpu")
+        model_data = torch_load_trusted_checkpoint(model_path)
         regression_path = str(Path(model_path).with_suffix("")) + "-contact-regression.pt"
         regression_data = None
         if os.path.isfile(regression_path):
             print(f"[INFO] Contact-regression weights found: {regression_path}")
-            regression_data = torch.load(regression_path, map_location="cpu")
+            regression_data = torch_load_trusted_checkpoint(regression_path)
         else:
             print(
                 "[INFO] Contact-regression weights were not found. This is OK for residue embedding extraction."
