@@ -41,6 +41,8 @@ pip install biopython==1.83
 pip install einops==0.8.1
 pip install torch==2.4.1
 pip install requests
+pip install matplotlib
+pip install scikit-learn
 ```
 
 ## ESM-2 Environment for Embedding Generation
@@ -199,6 +201,82 @@ Delta score = full-sequence score - masked-sequence score
 ```
 
 A high positive Delta score indicates that masking this local region strongly reduces the predicted LLPS propensity, suggesting that the region may contribute to phase-separation behavior. Candidate key-region seeds are selected from high-scoring residues, expanded locally, merged if overlapping, ranked by their average occlusion score, and reported as predicted key regions.
+
+## Reproducing main figures
+
+The data and scripts used to reproduce the main figures are provided in the `data_figure/` directory. Users can reproduce the ROC curves, metric tables, and success-ratio plots by running the plotting scripts inside each subdirectory.
+
+Before running these scripts, make sure the required plotting dependencies are installed:
+
+```bash
+conda activate ZHMolPhase_env
+pip install matplotlib scikit-learn pandas numpy
+```
+
+### Independent test-set comparison
+
+```bash
+cd data_figure/test
+python plot_AUC.py
+```
+
+This script reads the method-specific score files in each subfolder and generates:
+
+```text
+ROC_curves.png
+metrics_summary.csv
+```
+
+### Human-proteome comparison
+
+```bash
+cd data_figure/human_proteome
+python plot_AUC.py
+```
+
+This script generates the corresponding ROC curve and metric summary for the human-proteome analysis.
+
+### HPA-image-related comparison
+
+```bash
+cd data_figure/HPA_images
+python plot_AUC.py
+```
+
+This script generates the corresponding ROC curve and metric summary for the HPA-image-related analysis.
+
+### Cross-species or cross-dataset success summary
+
+```bash
+cd data_figure/cross
+python plot_success_summary.py
+```
+
+This script reads `all_result.txt` by default and generates:
+
+```text
+result_single_group.png
+result_summary.csv
+```
+
+The output CSV reports the number of successful predictions, the total number of evaluated cases, and the success ratio for each method.
+
+### Threshold-dependent and threshold-independent metrics
+
+`plot_AUC.py` reports AUC as the primary threshold-independent metric. AUC is calculated from the continuous prediction scores and is therefore not affected by the choice of classification threshold.
+
+For threshold-dependent metrics, including ACC, Precision, Recall, F1, and MCC, the scripts use fixed thresholds rather than test-set-optimized thresholds. This design is intended to make the evaluation reproducible and to examine model behavior under predefined decision criteria.
+
+For ZHMolPhase and most compared methods, a default threshold of 0.5 is used unless otherwise specified. In the response to reviewer comments, additional ZHMolPhase thresholds of 0.3, 0.5, 0.7, and 0.9 were considered to evaluate robustness under increasingly stringent classification criteria:
+
+- 0.3: a permissive threshold, which tends to increase recall but may reduce precision.
+- 0.5: the default decision threshold used for the main threshold-dependent metrics.
+- 0.7: a more stringent threshold, which emphasizes higher-confidence positive predictions.
+- 0.9: a highly stringent threshold, used to examine performance when only very high-scoring proteins are classified as positives.
+
+These thresholds are not selected by optimizing performance on the test set. Instead, they are fixed a priori to show how the balance between sensitivity and specificity changes under relaxed or stringent decision criteria.
+
+Some external methods use method-specific score scales or do not provide a directly comparable binary decision threshold. In the provided plotting scripts, PScore is evaluated using a threshold of 4.0, whereas PLAAC and LLPhyScore are reported only with AUC because no fixed threshold is applied for these methods in this reproducibility analysis. For methods that do not return scores for all proteins because of method-specific limitations, such as sequence-length restrictions, missing GO annotations, or other input constraints, the number of successfully scored positive and negative proteins is reported in `metrics_summary.csv`.
 
 ## Datasets
 
