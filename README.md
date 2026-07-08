@@ -220,21 +220,12 @@ cd data_figure/test
 python plot_AUC.py
 ```
 
-This script reads the method-specific score files in each subfolder and generates:
-
-```text
-ROC_curves.png
-metrics_summary.csv
-```
-
 ### Human-proteome comparison
 
 ```bash
 cd data_figure/human_proteome
 python plot_AUC.py
 ```
-
-This script generates the corresponding ROC curve and metric summary for the human-proteome analysis.
 
 ### HPA-image-related comparison
 
@@ -243,23 +234,12 @@ cd data_figure/HPA_images
 python plot_AUC.py
 ```
 
-This script generates the corresponding ROC curve and metric summary for the HPA-image-related analysis.
-
 ### Cross-species or cross-dataset success summary
 
 ```bash
 cd data_figure/cross
 python plot_success_summary.py
 ```
-
-This script reads `all_result.txt` by default and generates:
-
-```text
-result_single_group.png
-result_summary.csv
-```
-
-The output CSV reports the number of successful predictions, the total number of evaluated cases, and the success ratio for each method.
 
 ### Threshold-dependent and threshold-independent metrics
 
