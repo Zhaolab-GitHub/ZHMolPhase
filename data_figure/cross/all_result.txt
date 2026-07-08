@@ -1,0 +1,6 @@
+ZHMolPhase 7944/8985
+"catGRANULE 2.0"  7765/8985
+PSPHunter  5136/8985
+Deephase  4663/8985
+LLPS_regulator_pred 4316/8985
+"catGRANULE 1.0"  4860/8985
