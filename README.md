@@ -263,20 +263,11 @@ The output CSV reports the number of successful predictions, the total number of
 
 ### Threshold-dependent and threshold-independent metrics
 
-`plot_AUC.py` reports AUC as the primary threshold-independent metric. AUC is calculated from the continuous prediction scores and is therefore not affected by the choice of classification threshold.
-
-For threshold-dependent metrics, including ACC, Precision, Recall, F1, and MCC, the scripts use fixed thresholds rather than test-set-optimized thresholds. This design is intended to make the evaluation reproducible and to examine model behavior under predefined decision criteria.
-
-For ZHMolPhase and most compared methods, a default threshold of 0.5 is used unless otherwise specified. In the response to reviewer comments, additional ZHMolPhase thresholds of 0.3, 0.5, 0.7, and 0.9 were considered to evaluate robustness under increasingly stringent classification criteria:
-
+For ZHMolPhase and most compared methods, a default threshold of 0.5 is used unless otherwise specified. 
 - 0.3: a permissive threshold, which tends to increase recall but may reduce precision.
 - 0.5: the default decision threshold used for the main threshold-dependent metrics.
 - 0.7: a more stringent threshold, which emphasizes higher-confidence positive predictions.
 - 0.9: a highly stringent threshold, used to examine performance when only very high-scoring proteins are classified as positives.
-
-These thresholds are not selected by optimizing performance on the test set. Instead, they are fixed a priori to show how the balance between sensitivity and specificity changes under relaxed or stringent decision criteria.
-
-Some external methods use method-specific score scales or do not provide a directly comparable binary decision threshold. In the provided plotting scripts, PScore is evaluated using a threshold of 4.0, whereas PLAAC and LLPhyScore are reported only with AUC because no fixed threshold is applied for these methods in this reproducibility analysis. For methods that do not return scores for all proteins because of method-specific limitations, such as sequence-length restrictions, missing GO annotations, or other input constraints, the number of successfully scored positive and negative proteins is reported in `metrics_summary.csv`.
 
 ## Datasets
 
