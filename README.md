@@ -2,7 +2,7 @@
 
 ## Overview of ZHMolPhase
 
-**ZHMolPhase is a computational framework for the prediction and interpretation of phase-separating proteins and their driving regions.**
+**ZHMolPhase is a multiscale deep-learning framework for predicting protein phase-separation propensity and identifying candidate LLPS regions.**
 
 **We also provide an online calculation server for convenient use:**
 [Click to access the online server](http://zhaoserver.com.cn/ZHMolPhase/ZHMolPhase.html)
@@ -201,6 +201,30 @@ Delta score = full-sequence score - masked-sequence score
 ```
 
 A high positive Delta score indicates that masking this local region strongly reduces the predicted LLPS propensity, suggesting that the region may contribute to phase-separation behavior. Candidate key-region seeds are selected from high-scoring residues, expanded locally, merged if overlapping, ranked by their average occlusion score, and reported as predicted key regions.
+
+## Reproducing the independent test-set evaluation
+
+An end-to-end reproduction script is provided in `scripts/reproduce_test/`. All required test-set lists and FASTA input files are already included in the repository.
+
+After installing the `esm2_env` and `ZHMolPhase_env` Conda environments and downloading the trained ZHMolPhase checkpoints as described above, run:
+
+```bash
+bash scripts/reproduce_test/run_test_pipeline.sh \
+    --esm2-model /path/to/esm2_t33_650M_UR50D.pt \
+    --esm2-env esm2_env \
+    --zhmolphase-env ZHMolPhase_env \
+    --clean
+```
+
+The script reproduces the ZHMolPhase predictions and evaluation figures for the independent LLPS and non-LLPS test sets used in the manuscript. The final results are saved in:
+
+```text
+scripts/reproduce_test/output/
+├── ZHMolPhase/
+│   ├── LLPS_score.txt
+│   └── non_LLPS_score.txt
+└── figure/
+```
 
 ## Reproducing main figures
 
