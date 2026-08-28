@@ -20,7 +20,7 @@ ESM2_MODEL=""
 CKPT_DIR="${PROJECT_ROOT}/ckpts"
 
 ESM2_ENV="esm2_env"
-ZHMOLPHASE_ENV="try_ZHMolPhase"
+ZHMOLPHASE_ENV="ZHMolPhase_env"
 
 CLEAN_WORK=0
 
