@@ -83,7 +83,7 @@ Usage:
       --esm2-model /path/to/esm2_t33_650M_UR50D.pt \\
       [--ckpt-dir /path/to/ckpts] \\
       [--esm2-env esm2_env] \\
-      [--zhmolphase-env try_ZHMolPhase] \\
+      [--zhmolphase-env ZHMolPhase_env] \\
       [--clean]
 
 Required:
@@ -103,7 +103,7 @@ Optional:
 
   --zhmolphase-env NAME
       Conda environment for ZHMolPhase inference and plotting.
-      Default: try_ZHMolPhase
+      Default: ZHMolPhase_env
 
   --clean
       Delete any unfinished temporary workspace and previous final output
